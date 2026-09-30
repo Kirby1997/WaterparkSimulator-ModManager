@@ -45,6 +45,23 @@ public sealed class CfgDocument
     public string? PluginGuid { get; private init; }
     public IReadOnlyList<CfgSetting> Settings { get; }
 
+    /// <summary>The file's text with one setting's value replaced and every other line untouched.</summary>
+    public string WithValue(CfgSetting setting, string rawValue)
+    {
+        if (rawValue.Contains('\n') || rawValue.Contains('\r'))
+            throw new ArgumentException("A value must fit on one line.", nameof(rawValue));
+
+        var line = setting.Line < _lines.Length ? _lines[setting.Line] : "";
+        var equals = line.IndexOf('=');
+        if (equals < 0 || line[..equals].Trim() != setting.Key)
+            throw new InvalidOperationException($"Line {setting.Line + 1} does not hold {setting.Key}.");
+
+        var lines = (string[])_lines.Clone();
+        var ending = line.EndsWith('\r') ? "\r" : "";
+        lines[setting.Line] = line[..equals].TrimEnd() + " = " + rawValue + ending;
+        return string.Join('\n', lines);
+    }
+
     public static CfgDocument Parse(string text)
     {
         var lines = text.Split('\n');
