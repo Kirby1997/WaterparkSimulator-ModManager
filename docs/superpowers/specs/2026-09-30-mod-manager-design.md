@@ -20,7 +20,6 @@ Out of scope (user chose "configs only"):
 
 - Reset-to-default buttons.
 - Enabling or disabling mods.
-- Press-a-key capture for key bindings (they are edited as text or as an enum list).
 
 ## Where configs come from
 
@@ -77,10 +76,24 @@ invariant-culture parsing for file settings of known types; strings are stored a
 Invalid input is not applied: the status bar under the panel turns red and gives the reason, and the old value stays.
 Out-of-range numbers are rejected, not clamped.
 
+## Key settings (added 2026-09-30 after the first in-game test)
+
+- Settings of type `Key` (Input System), `KeyCode` or `KeyboardShortcut` get a key button and a
+  Clear button instead of ◀ ▶. Clicking the key button waits for a key press; Esc cancels.
+  A `KeyboardShortcut` records the Ctrl/Shift/Alt keys held with the key. Clear stores `None`.
+- Keys are compared by their Input System name (`Alpha1` = `Digit1`, `Return` = `Enter`).
+- A key setting that shares its exact keys with another mod setting or with one of the game's
+  keyboard controls shows "Also bound to: ..." on a red strip under it, and its mod's list entry
+  says "key clash". The game's controls come from `KeyRebinder.mainAsset`, `uiAsset` and
+  `RuntimeAssets` (`ToJson()`), with the player's rebinds from `KeyRebinder.CurrentOverridesJson()`.
+  Clashes between two game controls are not reported.
+
 ## Menu and panel
 
 - The "Mods" button is a clone of an existing button in `MainMenuUI` and in `EscapeMenuUI`, so
-  it matches the game's look. It is added once per menu instance.
+  it matches the game's look. It is added once per menu instance. The column is then squeezed
+  (smaller gaps, then shorter buttons) back to its old height, so the last button does not slide
+  under anything the menu draws below it (Exit went under the Discord button otherwise).
 - F10 also opens the panel from anywhere (the key is a ModManager setting). It is the fallback
   when no button can be found to clone; that case logs a warning.
 - The panel is uGUI + TextMeshPro, using the game's font and panel sprites where they can be

@@ -48,10 +48,7 @@ internal static class Hooks
     {
         try
         {
-            var panel = Plugin.Instance.Panel;
-            if (!panel.IsOpen) return false;
-            panel.Close();
-            return true;
+            return Plugin.Instance.Panel.HandleEscapeFromGame();
         }
         catch (Exception e)
         {

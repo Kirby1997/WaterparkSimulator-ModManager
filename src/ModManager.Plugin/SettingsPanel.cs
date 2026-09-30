@@ -17,6 +17,7 @@ internal sealed class SettingsPanel
 
     private readonly ManualLogSource _log;
     private readonly ConfigStore _store;
+    private readonly Func<IReadOnlyList<KeyBinding>> _gameKeys;
 
     private GameObject _root;
     private RectTransform _modList;
@@ -28,18 +29,30 @@ internal sealed class SettingsPanel
     private CursorLockMode _cursorLock;
     private bool _cursorVisible;
     private int _escapeFrame = -1;
+    private int _escapeHandledFrame = -1;
+    private IReadOnlyList<KeyBinding> _gameBindings = Array.Empty<KeyBinding>();
+    private IReadOnlyDictionary<string, IReadOnlyList<string>> _clashes = new Dictionary<string, IReadOnlyList<string>>();
+
+    // The key setting waiting for the player to press a key.
+    private (ModEntry Mod, SettingView View, TextMeshProUGUI Label)? _capture;
 
     // A slider saves once it has been still for a moment, not on every step of a drag.
     private (ModEntry Mod, SettingView View, string Text)? _pendingSlider;
     private float _pendingSince;
 
-    public SettingsPanel(ManualLogSource log, ConfigStore store)
+    public SettingsPanel(ManualLogSource log, ConfigStore store, Func<IReadOnlyList<KeyBinding>> gameKeys)
     {
         _log = log;
         _store = store;
+        _gameKeys = gameKeys;
     }
 
     public bool IsOpen => _root != null && _root.activeSelf;
+
+    public bool IsCapturing => IsOpen && _capture != null;
+
+    /// <summary>True while capturing for a shortcut, which waits for a key that is not a modifier.</summary>
+    public bool CapturingShortcut => IsCapturing && _capture.Value.View.Setting.TypeName == "KeyboardShortcut";
 
     public void Toggle()
     {
@@ -53,6 +66,8 @@ internal sealed class SettingsPanel
         {
             if (_root == null) Build();
             _store.Refresh();
+            _gameBindings = _gameKeys();
+            _capture = null;
             _cursorLock = Cursor.lockState;
             _cursorVisible = Cursor.visible;
             _root.SetActive(true);
@@ -69,6 +84,7 @@ internal sealed class SettingsPanel
     {
         if (!IsOpen) return;
         FlushSlider();
+        _capture = null;
         _root.SetActive(false);
         Cursor.lockState = _cursorLock;
         Cursor.visible = _cursorVisible;
@@ -85,11 +101,75 @@ internal sealed class SettingsPanel
 
         if (_pendingSlider != null && Time.unscaledTime - _pendingSince >= SliderDelay) FlushSlider();
 
-        // Esc normally reaches the game's window code, which the hooks turn into closing this
-        // panel. Where no game window handles it, close a frame later.
-        if (escapePressed) _escapeFrame = Time.frameCount;
-        else if (_escapeFrame == Time.frameCount - 1) Close();
+        // Esc normally reaches the game's window code, whose hooks call HandleEscapeFromGame.
+        // Where no game window handles it, act here: at once to cancel a key capture, a frame
+        // later to close, so the game's handler cannot close the menu underneath as well.
+        var frame = Time.frameCount;
+        if (escapePressed && _escapeHandledFrame != frame)
+        {
+            if (IsCapturing)
+            {
+                _escapeHandledFrame = frame;
+                CancelCapture();
+            }
+            else
+            {
+                _escapeFrame = frame;
+            }
+        }
+        else if (_escapeFrame == frame - 1 && _escapeHandledFrame != _escapeFrame)
+        {
+            Close();
+        }
     }
+
+    /// <summary>Esc or Back reached the game's window code. True when the panel used it.</summary>
+    public bool HandleEscapeFromGame()
+    {
+        if (!IsOpen) return false;
+        var frame = Time.frameCount;
+        if (_escapeHandledFrame == frame) return true;
+        _escapeHandledFrame = frame;
+        if (IsCapturing) CancelCapture();
+        else Close();
+        return true;
+    }
+
+    /// <summary>The player pressed a key while a key setting was waiting for one.</summary>
+    public void FinishCapture(string key, IReadOnlyList<string> heldModifiers)
+    {
+        if (_capture is not { } capture) return;
+        _capture = null;
+
+        var check = KeyNames.Capture(capture.View.Setting, key, heldModifiers);
+        if (!check.Ok)
+        {
+            capture.Label.text = KeyText(capture.View);
+            ShowStatus($"{capture.View.Label} not saved: {check.Error}", error: true);
+            return;
+        }
+        Apply(capture.Mod, capture.View, check.Raw, rebuild: true);
+    }
+
+    private void StartCapture(ModEntry mod, SettingView view, TextMeshProUGUI label)
+    {
+        CancelCapture();
+        _capture = (mod, view, label);
+        label.text = "Press a key...";
+        var combo = view.Setting.TypeName == "KeyboardShortcut" ? " Hold Ctrl, Shift or Alt with it for a combination." : "";
+        ShowStatus($"Press the key to use for {view.Label}.{combo} Esc cancels.", error: false);
+    }
+
+    private void CancelCapture()
+    {
+        if (_capture is not { } capture) return;
+        _capture = null;
+        capture.Label.text = KeyText(capture.View);
+        ShowStatus(Note, error: false);
+    }
+
+    private static string KeyText(SettingView view) =>
+        KeyNames.Parse(view.Setting.TypeName, view.Setting.RawValue) == null ? "(none)" : ValueRules.Display(view.Setting);
 
     private void Build()
     {
@@ -140,6 +220,7 @@ internal sealed class SettingsPanel
     private void ShowMods()
     {
         var mods = _store.Mods;
+        _clashes = KeyClashes.Find(KeyClashes.FromMods(mods).Concat(_gameBindings));
         var selected = mods.FirstOrDefault(m => m.Source.RelativePath == _selectedPath) ?? mods.FirstOrDefault();
         _selectedPath = selected?.Source.RelativePath;
 
@@ -148,7 +229,8 @@ internal sealed class SettingsPanel
         {
             var version = mod.Version.Length > 0 ? "v" + mod.Version + " · " : "";
             var isSelected = mod == selected;
-            var button = Ui.NewButton(_modList, $"{mod.Title}\n<size=70%>{version}{mod.Status}</size>", 28f,
+            var clash = _clashes.Keys.Any(id => id.StartsWith(mod.Source.RelativePath + "\n", StringComparison.Ordinal)) ? " · key clash" : "";
+            var button = Ui.NewButton(_modList, $"{mod.Title}\n<size=70%>{version}{mod.Status}{clash}</size>", 28f,
                 isSelected ? Ui.SelectedColor : Ui.ButtonColor, () => Select(mod));
             Ui.Height(button, 76f);
         }
@@ -206,6 +288,18 @@ internal sealed class SettingsPanel
         return Ui.NewText(holder, text, size);
     }
 
+    /// <summary>White text on a red strip; tinted text is hard to read on this background.</summary>
+    private void AddWarning(string text)
+    {
+        var holder = Ui.Rect("Warning", _settings);
+        Ui.NewImage(holder, Ui.ErrorColor);
+        var layout = holder.gameObject.AddComponent<VerticalLayoutGroup>();
+        layout.childControlHeight = true;
+        layout.childControlWidth = true;
+        layout.padding = new RectOffset { left = 10, right = 10, top = 4, bottom = 4 };
+        Ui.NewText(holder, text, 22f);
+    }
+
     private void AddSetting(ModEntry mod, SettingView view)
     {
         var nextLaunch = !view.AppliesLive;
@@ -227,6 +321,8 @@ internal sealed class SettingsPanel
             Ui.Stretch(Ui.NewText(control, ValueRules.Display(view.Setting), 28f).rectTransform);
         }
 
+        if (_clashes.TryGetValue(KeyClashes.IdOf(mod, view), out var others)) AddWarning("Also bound to: " + string.Join(", ", others));
+
         var details = ValueRules.Details(view.Setting);
         if (details.Length > 0) AddLine(details, 22f);
     }
@@ -243,6 +339,16 @@ internal sealed class SettingsPanel
 
         switch (view.Control)
         {
+            case ControlKind.Key:
+            {
+                TextMeshProUGUI keyLabel = null;
+                var key = Ui.NewButton(area, KeyText(view), 28f, Ui.ButtonColor, () => StartCapture(mod, view, keyLabel));
+                keyLabel = key.GetComponentInChildren<TextMeshProUGUI>();
+                Ui.Place(key.GetComponent<RectTransform>(), 0f, 0f, 0.7f, 1f);
+                var clear = Ui.NewButton(area, "Clear", 26f, Ui.OffColor, () => Apply(mod, view, KeyNames.Unbound, rebuild: true));
+                Ui.Place(clear.GetComponent<RectTransform>(), 0.72f, 0f, 1f, 1f);
+                break;
+            }
             case ControlKind.Toggle:
             {
                 var on = string.Equals(shown, "true", StringComparison.OrdinalIgnoreCase);
