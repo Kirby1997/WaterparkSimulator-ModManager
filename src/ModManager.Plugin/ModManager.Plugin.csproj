@@ -50,4 +50,28 @@
     <Message Importance="high" Text="Deployed @(DeployFiles->'%(Filename)%(Extension)', ', ') to $(PluginDeployDir)" />
   </Target>
 
+  <!-- dotnet build src/ModManager.Plugin -c Release -t:PackThunderstore -->
+  <Target Name="PackThunderstore" DependsOnTargets="Build">
+    <PropertyGroup>
+      <RepoRoot>$(MSBuildThisFileDirectory)..\..\</RepoRoot>
+      <StageDir>$(RepoRoot)dist\stage\</StageDir>
+      <PackageZip>$(RepoRoot)dist\ModManager-$(Version).zip</PackageZip>
+      <ManifestText>$([System.IO.File]::ReadAllText('$(RepoRoot)thunderstore\manifest.json'))</ManifestText>
+      <PluginText>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)Plugin.cs'))</PluginText>
+    </PropertyGroup>
+    <!-- The version lives in three places; refuse to package when they disagree. -->
+    <Error Condition="!$(ManifestText.Contains('&quot;version_number&quot;: &quot;$(Version)&quot;'))"
+           Text="thunderstore/manifest.json version_number does not match $(Version)." />
+    <Error Condition="!$(PluginText.Contains('Version = &quot;$(Version)&quot;'))"
+           Text="Plugin.Version in Plugin.cs does not match $(Version)." />
+    <RemoveDir Directories="$(StageDir)" />
+    <Copy SourceFiles="$(RepoRoot)thunderstore\manifest.json;$(RepoRoot)thunderstore\icon.png;$(RepoRoot)README.md;$(RepoRoot)CHANGELOG.md"
+          DestinationFolder="$(StageDir)" />
+    <Copy SourceFiles="$(TargetDir)ModManager.Plugin.dll;$(TargetDir)ModManager.Core.dll" DestinationFolder="$(StageDir)plugins" />
+    <Delete Files="$(PackageZip)" />
+    <ZipDirectory SourceDirectory="$(StageDir)" DestinationFile="$(PackageZip)" />
+    <RemoveDir Directories="$(StageDir)" />
+    <Message Importance="high" Text="Thunderstore package: $(PackageZip)" />
+  </Target>
+
 </Project>
