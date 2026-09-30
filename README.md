@@ -17,7 +17,7 @@ BepInEx mods keep their settings in `.cfg` files under `BepInEx/config`. ModMana
 
 ## Status
 
-Early. The file handling, input checks and key clash rules are covered by tests. The panel has been used in the game with mouse and keyboard; the key picker and the key clash warnings are newer and have had less use in the game. Controllers are untested.
+Early. The file handling, input checks and key clash rules are covered by tests. The panel, the menu buttons and the key picker have been used in the game with mouse and keyboard; the key clash warnings have had less use. Controllers are untested.
 
 Things to know:
 
