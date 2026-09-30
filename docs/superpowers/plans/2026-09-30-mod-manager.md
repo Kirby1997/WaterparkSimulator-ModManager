@@ -22,7 +22,7 @@
 - Nothing is pushed or uploaded without an explicit, action-specific confirmation from the user.
 - Commits use the repo's git identity (Kirby1997 noreply) and end with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 
-Commands below run from `/mnt/c/Users/Jacob/Documents/Waterpark Simulator Mods/ModManager` and use `DOTNET="/mnt/c/Program Files/dotnet/dotnet.exe"`.
+Commands below run from `the repository root` and use `DOTNET="/mnt/c/Program Files/dotnet/dotnet.exe"`.
 
 ---
 
@@ -114,7 +114,7 @@ Commands below run from `/mnt/c/Users/Jacob/Documents/Waterpark Simulator Mods/M
 
 Fixtures and solution:
 ```bash
-P="/mnt/c/Users/Jacob/AppData/Roaming/r2modmanPlus-local/WaterparkSimulator/profiles/Default/BepInEx/config"
+P="$APPDATA_WSL/r2modmanPlus-local/WaterparkSimulator/profiles/Default/BepInEx/config"
 mkdir -p tests/ModManager.Tests/Fixtures
 cp "$P/BepInEx.cfg" tests/ModManager.Tests/Fixtures/BepInEx.cfg
 cp "$P/com.github.kirby1997.parkstats.cfg" tests/ModManager.Tests/Fixtures/parkstats.cfg

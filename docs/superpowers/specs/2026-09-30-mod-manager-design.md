@@ -25,7 +25,7 @@ Out of scope (user chose "configs only"):
 
 The config folder is BepInEx's `Paths.ConfigPath`. It is never hard-coded. With the r2modman
 Default profile it resolves to
-`C:\Users\Jacob\AppData\Roaming\r2modmanPlus-local\WaterparkSimulator\profiles\Default\BepInEx\config`.
+`%APPDATA%\r2modmanPlus-local\WaterparkSimulator\profiles\Default\BepInEx\config`.
 
 Discovery is hybrid:
 
