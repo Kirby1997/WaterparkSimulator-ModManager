@@ -74,7 +74,7 @@ Chosen in Core from the setting's type and constraints:
 
 Text input is parsed with the same rules BepInEx uses (`TomlTypeConverter` for live entries;
 invariant-culture parsing for file settings of known types; strings are stored as typed).
-Invalid input is not applied: the field turns red, shows the reason, and the old value stays.
+Invalid input is not applied: the status bar under the panel turns red and gives the reason, and the old value stays.
 Out-of-range numbers are rejected, not clamped.
 
 ## Menu and panel
@@ -86,8 +86,8 @@ Out-of-range numbers are rejected, not clamped.
 - The panel is uGUI + TextMeshPro, using the game's font and panel sprites where they can be
   found, white text on a solid background (the user rejected tinted text in ParkStats).
 - Layout: mod list on the left (name, version, a "not loaded" mark for file-only configs);
-  the selected mod's settings on the right, grouped by section, scrollable. Selecting a setting
-  shows its description, default value and range under the list. A footer notes that some mods
+  the selected mod's settings on the right, grouped by section, scrollable. Each setting shows
+  its description, default value and range in smaller text under its control. A footer notes that some mods
   apply changes only after a restart. Close with a button or Esc.
 - While the panel is open the game's own menu input is blocked (Esc closes only the panel).
 - On open the panel re-reads every file, and calls `Reload()` on live `ConfigFile`s whose file
