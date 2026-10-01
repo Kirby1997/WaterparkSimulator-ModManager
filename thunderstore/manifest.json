@@ -1,7 +1,7 @@
 {
-  "name": "ModManager",
-  "version_number": "0.1.1",
-  "website_url": "https://github.com/Kirby1997/WaterparkSimulator-ModManager",
+  "name": "ModSettings",
+  "version_number": "0.2.0",
+  "website_url": "https://github.com/Kirby1997/WaterparkSimulator-ModSettings",
   "description": "Change your mods' settings in game. A Mods button on the main and pause menus lists every BepInEx config, with key pickers and key clash warnings.",
   "dependencies": [
     "BepInEx-BepInExPack_IL2CPP-6.0.755"

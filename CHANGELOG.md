@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.0
+
+- Renamed from ModManager to ModSettings, because "mod manager" usually means a tool like r2modman. It is a new Thunderstore package: remove ModManager when you install this.
+- The hotkey setting moved to `BepInEx/config/com.github.kirby1997.modsettings.cfg`. If you changed it from F10, set it again; the old `com.github.kirby1997.modmanager.cfg` can be deleted.
+
 ## 0.1.1
 
 - Fixed: with ModManager installed, saves never left the loading screen. One of its menu hooks broke a part of the game that loading relies on; that hook is gone.

@@ -1,8 +1,10 @@
-# ModManager
+# ModSettings
 
 A Waterpark Simulator mod for changing your other mods' settings without leaving the game.
 
-BepInEx mods keep their settings in `.cfg` files under `BepInEx/config`. ModManager adds a **Mods** button to the main menu and the pause menu (F10 also opens it anywhere) that lists every one of those files and lets you edit them.
+Formerly published as ModManager; versions before 0.2.0 went by that name.
+
+BepInEx mods keep their settings in `.cfg` files under `BepInEx/config`. ModSettings adds a **Mods** button to the main menu and the pause menu (F10 also opens it anywhere) that lists every one of those files and lets you edit them.
 
 - Every mod with a config file is listed, loaded or not, plus BepInEx's own `BepInEx.cfg`.
 - Each setting gets a control that fits it: a toggle for on/off, arrows for a fixed list, a slider for a number with a range, a text field for anything else, and a press-a-key picker for keys.
@@ -27,13 +29,13 @@ Things to know:
 
 ## Install
 
-With [r2modman](https://thunderstore.io/package/ebkr/r2modman/): select Waterpark Simulator, install `BepInExPack_IL2CPP`, then install ModManager.
+With [r2modman](https://thunderstore.io/package/ebkr/r2modman/): select Waterpark Simulator, install `BepInExPack_IL2CPP`, then install ModSettings.
 
-By hand: install BepInEx 6 (IL2CPP) for the game, then copy `ModManager.Plugin.dll` and `ModManager.Core.dll` into `BepInEx/plugins/ModManager/`.
+By hand: install BepInEx 6 (IL2CPP) for the game, then copy `ModSettings.Plugin.dll` and `ModSettings.Core.dll` into `BepInEx/plugins/ModSettings/`.
 
 ## Settings
 
-`BepInEx/config/com.github.kirby1997.modmanager.cfg`, also editable in the panel itself:
+`BepInEx/config/com.github.kirby1997.modsettings.cfg`, also editable in the panel itself:
 
 | Setting | Default | Meaning |
 |---|---|---|
@@ -61,14 +63,14 @@ The build copies the plugin into the r2modman `Default` profile. To use another 
 To build the Thunderstore package into `dist/`:
 
 ```
-dotnet build src/ModManager.Plugin -c Release -t:PackThunderstore
+dotnet build src/ModSettings.Plugin -c Release -t:PackThunderstore
 ```
 
 ## Layout
 
-- `src/ModManager.Core` has no game references: reading and writing `.cfg` files, checking input, choosing controls, key names and key clashes. This is where the tests point.
-- `src/ModManager.Plugin` is the BepInEx plugin: it finds config files and running mods, adds the menu buttons and draws the panel.
-- `tests/ModManager.Tests` are the xUnit tests for Core.
+- `src/ModSettings.Core` has no game references: reading and writing `.cfg` files, checking input, choosing controls, key names and key clashes. This is where the tests point.
+- `src/ModSettings.Plugin` is the BepInEx plugin: it finds config files and running mods, adds the menu buttons and draws the panel.
+- `tests/ModSettings.Tests` are the xUnit tests for Core.
 
 ## License
 
