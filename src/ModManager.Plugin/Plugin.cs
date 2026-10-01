@@ -13,7 +13,7 @@ public sealed class Plugin : BasePlugin
 {
     public const string Id = "com.github.kirby1997.modmanager";
     public const string Name = "ModManager";
-    public const string Version = "0.1.0";
+    public const string Version = "0.1.1";
 
     private readonly HashSet<string> _reported = new();
     private ConfigEntry<Key> _hotkey;
