@@ -19,6 +19,7 @@ public sealed class Plugin : BasePlugin
     private ConfigEntry<Key> _hotkey;
     private List<(Key Key, KeyControl Control)> _keyControls;
     private IntPtr _keyboardPointer;
+    private bool _pausedForPanel;
 
     internal static Plugin Instance { get; private set; }
 
@@ -44,14 +45,33 @@ public sealed class Plugin : BasePlugin
         {
             var keyboard = Keyboard.current;
             var escape = keyboard != null && keyboard.escapeKey.wasPressedThisFrame;
+            if (!Panel.IsOpen) _pausedForPanel = false;
             if (keyboard != null && Panel.IsCapturing) Capture(keyboard);
-            else if (keyboard != null && _hotkey.Value != Key.None && keyboard[_hotkey.Value].wasPressedThisFrame) Panel.Toggle();
+            else if (keyboard != null && _hotkey.Value != Key.None && keyboard[_hotkey.Value].wasPressedThisFrame) ToggleFromHotkey();
             Panel.Tick(escape);
         }
         catch (Exception e)
         {
             ReportOnce("frame update", e);
         }
+    }
+
+    /// <summary>
+    /// During play the hotkey pauses first: it opens the game's pause menu, then the panel on top.
+    /// Closing with the hotkey closes both; Esc or the panel's own button leave the pause menu open.
+    /// </summary>
+    private void ToggleFromHotkey()
+    {
+        if (Panel.IsOpen)
+        {
+            Panel.Close();
+            if (_pausedForPanel) PauseMenu.Close();
+            _pausedForPanel = false;
+            return;
+        }
+
+        _pausedForPanel = PauseMenu.Open();
+        Panel.Open();
     }
 
     /// <summary>Hands the first key pressed this frame to the key setting waiting for one.</summary>

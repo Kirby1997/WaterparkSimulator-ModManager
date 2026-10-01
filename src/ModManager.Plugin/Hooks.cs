@@ -15,7 +15,11 @@ internal static class Hooks
 
     [HarmonyPostfix]
     [HarmonyPatch(typeof(EscapeMenuUI), nameof(EscapeMenuUI.Start))]
-    private static void AfterEscapeMenuStart(EscapeMenuUI __instance) => AddButton(__instance, "pause menu");
+    private static void AfterEscapeMenuStart(EscapeMenuUI __instance)
+    {
+        PauseMenu.Remember(__instance);
+        AddButton(__instance, "pause menu");
+    }
 
     // In case the menu was built after Start ran; adding is skipped when the button is there.
     [HarmonyPostfix]
